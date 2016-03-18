@@ -1,0 +1,36 @@
+
+def generate_entry(pk, model, **kwargs):
+    return {
+        "model" : model,
+        "pk" : pk,
+        "fields" : kwargs
+    }
+
+
+rule all:
+    input : 'output/physicalIntereactionFixtures.json'
+
+
+rule unzip_physical_interactions:
+    input : 'data/BIOGRID-MV-Physical-3.4.134.tab2.zip'
+    output : 'data/BIOGRID-MV-Physical-3.4.134.tab2.txt'
+    shell : 'unzip {input} -d data; touch {output}'
+
+rule generate_physical_interactions:
+    input : 'data/BIOGRID-MV-Physical-3.4.134.tab2.txt'
+    output : 'output/physicalIntereactionFixtures.json'
+    run:
+        re_gene =re.compile('biogrid\:\d+\|entrez gene/locuslink\:([^\|]+)')
+        entries = []
+        n = 1
+        with open(input[0], 'r') as f:
+            for line in f:
+               fields = line.strip().split('\t')
+               geneA = fields[7]
+               geneB = fields[8]
+               entry = generate_entry(n, 'djangoms.physicalInteractions', proteinA = geneA, proteinB = geneB)
+               entries.append(entry)
+               n = n + 1
+        fh_out = open(output[0], 'w')
+        json.dump(entry, fh_out)
+        fh_out.close()
