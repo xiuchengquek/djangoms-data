@@ -22,15 +22,21 @@ rule generate_physical_interactions:
     run:
         re_gene =re.compile('biogrid\:\d+\|entrez gene/locuslink\:([^\|]+)')
         entries = []
+        data_entries = []
         n = 1
         with open(input[0], 'r') as f:
             for line in f:
                fields = line.strip().split('\t')
                geneA = fields[7]
                geneB = fields[8]
-               entry = generate_entry(n, 'djangoms.physicalInteractions', proteinA = geneA, proteinB = geneB)
-               entries.append(entry)
-               n = n + 1
+               entries.append((geneA, geneB))
+
+        entries = set(entries)
+
+        for x in entries :
+            entry = generate_entry(n, 'proteinInteractors.physicalinteractions', proteinA = x[0], proteinB = x[1])
+            data_entries.append(entry)
+            n = n + 1
         fh_out = open(output[0], 'w')
-        json.dump(entry, fh_out)
+        json.dump(data_entries, fh_out)
         fh_out.close()
